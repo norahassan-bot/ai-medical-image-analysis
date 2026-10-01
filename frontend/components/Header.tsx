@@ -70,9 +70,6 @@ export default function Header({ onToggleMobileSidebar }: HeaderProps) {
         <h1 className="text-xs sm:text-base font-bold text-slate-900 tracking-tight truncate max-w-[130px] sm:max-w-none">
           {t("app.headerTitle")}
         </h1>
-        <span className="hidden lg:inline-block text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-mono shrink-0">
-          {t("app.stackBadge")}
-        </span>
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
