@@ -14,7 +14,6 @@ import {
   ShieldAlert,
   Users,
   BarChart3,
-  Pill,
   X,
 } from "lucide-react";
 import { API_ENDPOINTS } from "@/lib/config";
@@ -75,12 +74,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
       badge: t("nav.analysisBadge"),
     },
     {
-      name: t("nav.prescription"),
-      href: "/user/prescription",
-      icon: Pill,
-      badge: t("nav.prescriptionBadge"),
-    },
-    {
       name: t("nav.myHistory"),
       href: "/history",
       icon: History,
@@ -107,12 +100,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
       href: "/analysis",
       icon: ScanLine,
       badge: t("nav.analysisBadge"),
-    },
-    {
-      name: t("nav.prescription"),
-      href: "/user/prescription",
-      icon: Pill,
-      badge: t("nav.prescriptionBadge"),
     },
     {
       name: t("nav.history"),
@@ -147,12 +134,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
       href: "/admin/analyses",
       icon: History,
       badge: "All",
-    },
-    {
-      name: t("nav.prescriptionHistory"),
-      href: "/admin/prescriptions",
-      icon: Pill,
-      badge: "Rx",
     },
     {
       name: t("nav.adminUsers"),

@@ -47,12 +47,6 @@ next-env.d.ts
 data/*
 !data/.gitkeep
 data/chest_xray/
-data/prescriptions/raw/
-data/prescriptions/processed/
-data/prescriptions/splits/
-!data/prescriptions/metadata/
-!data/prescriptions/samples/
-!data/prescriptions/.gitkeep
 backend/data/*
 !backend/data/.gitkeep
 models/*

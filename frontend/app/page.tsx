@@ -19,7 +19,6 @@ import {
   FileSpreadsheet,
   Eye,
   RefreshCw,
-  Pill,
 } from "lucide-react";
 import { getHealth, getHistory, getSystemInfo } from "@/lib/api";
 import type { HealthResponse, AnalysisHistoryItem, SystemInfoResponse } from "@/types/api";
@@ -184,62 +183,7 @@ export default function ClinicalDashboardPage() {
         </div>
       </div>
 
-      {/* 4. Primary Clinical AI Tools Suite */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        {/* Tool 1: Chest X-Ray AI Analysis */}
-        <div className="p-6 bg-gradient-to-br from-white via-medPink-50/20 to-medPink-50/50 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md transition">
-          <div className="space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-medPink-500 text-white flex items-center justify-center shadow-sm">
-              <ScanLine className="w-6 h-6" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
-                {t("nav.analysis")}
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                {t("user.quickAnalysisDesc")}
-              </p>
-            </div>
-          </div>
-          <div className="pt-2">
-            <Link
-              href="/analysis"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition"
-            >
-              <span>{t("dashboard.startAnalysis")}</span>
-              <ArrowRight className={`w-3.5 h-3.5 ${isRTL ? "rotate-180" : ""}`} />
-            </Link>
-          </div>
-        </div>
-
-        {/* Tool 2: Prescription Reader */}
-        <div className="p-6 bg-gradient-to-br from-white via-medTeal-50/20 to-medTeal-50/50 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md transition">
-          <div className="space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-medTeal-600 text-white flex items-center justify-center shadow-sm">
-              <Pill className="w-6 h-6" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
-                {t("dashboard.prescriptionCardTitle")}
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                {t("dashboard.prescriptionCardDesc")}
-              </p>
-            </div>
-          </div>
-          <div className="pt-2">
-            <Link
-              href="/user/prescription"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-medPink-500 to-medTeal-600 hover:from-medPink-600 hover:to-medTeal-700 text-white rounded-xl text-xs font-bold shadow-xs transition"
-            >
-              <span>{t("dashboard.startPrescription")}</span>
-              <ArrowRight className={`w-3.5 h-3.5 ${isRTL ? "rotate-180" : ""}`} />
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. Recent Analyses Section */}
+      {/* 4. Recent Analyses Section */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="p-4 sm:p-6 border-b border-slate-200 flex flex-col xs:flex-row xs:items-center justify-between gap-3">
           <div className="flex items-center gap-2">

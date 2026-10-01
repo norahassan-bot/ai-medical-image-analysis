@@ -49,11 +49,6 @@ from database.database import (
     get_analysis_history,
     count_analyses,
     save_analysis_artifacts,
-    create_prescription_analysis,
-    get_prescription_analysis_by_id,
-    get_prescription_history,
-    count_prescription_analyses,
-    save_prescription_artifacts,
     create_user,
     get_user_by_username,
     get_user_by_id,
@@ -63,10 +58,6 @@ from database.database import (
     seed_admin_user,
     get_admin_statistics,
     invalidate_user_token,
-)
-from src.prescriptions.prescription_understanding import (
-    PrescriptionUnderstandingService,
-    PrescriptionUnderstandingResult,
 )
 from reports.report_generator import (
     generate_analysis_pdf,
@@ -378,15 +369,6 @@ def get_active_predictor() -> ChestXRayPredictor:
     if predictor is None or not predictor.is_loaded:
         raise ModelNotLoadedError("AI inference engine is not ready.")
     return predictor
-
-
-def get_prescription_service() -> PrescriptionUnderstandingService:
-    """Retrieve active PrescriptionUnderstandingService singleton instance."""
-    service = getattr(app.state, "prescription_service", None)
-    if service is None:
-        service = PrescriptionUnderstandingService()
-        app.state.prescription_service = service
-    return service
 
 
 def validate_analysis_id_format(analysis_id: str) -> str:
@@ -1293,196 +1275,6 @@ def get_analysis_artifact(
 
     media_type = "image/jpeg" if resolved_path.suffix.lower() in [".jpg", ".jpeg"] else "image/png"
     return FileResponse(path=str(resolved_path), media_type=media_type)
-
-
-# -----------------------------------------------------------------------------
-# Prescription Reader & Analysis Endpoints (Task 25 & Task 26)
-# -----------------------------------------------------------------------------
-@app.post(
-    "/prescription/analyze",
-    status_code=status.HTTP_200_OK,
-    summary="Prescription Image Analysis & Understanding",
-    description="Analyze prescription handwriting, retrieve verified educational drug facts, and extract explicit written instructions.",
-    tags=["Prescription Reader", "History"],
-)
-@app.post(
-    "/api/v1/prescription/analyze",
-    status_code=status.HTTP_200_OK,
-    include_in_schema=False,
-)
-async def analyze_prescription_endpoint(
-    file: UploadFile = File(..., description="Prescription image (JPG, JPEG, PNG, WEBP)"),
-    current_user: Dict[str, Any] = Depends(require_authenticated_user),
-):
-    """Execute prescription recognition pipeline, match medications, retrieve indications, parse instructions, and persist record."""
-    service = get_prescription_service()
-    image_bytes = await validate_uploaded_file(file)
-
-    # Execute full understanding on the image
-    result = service.understand_prescription(image_bytes)
-
-    analysis_id = str(uuid4())
-    artifact_refs = save_prescription_artifacts(
-        analysis_id=analysis_id,
-        original_bytes=image_bytes,
-        original_filename=file.filename,
-    )
-
-    saved_record = create_prescription_analysis({
-        "analysis_id": analysis_id,
-        "filename": Path(file.filename).name if file.filename else None,
-        "total_medications": result.total_medications,
-        "status": result.status,
-        "processing_time_ms": result.processing_time_ms,
-        "image_reference": artifact_refs.get("image_reference"),
-        "owner_user_id": current_user["id"],
-        "result": result.model_dump(),
-    })
-
-    return {
-        "analysis_id": saved_record["analysis_id"],
-        "created_at": saved_record["created_at"],
-        "filename": saved_record["filename"],
-        "image_reference": saved_record["image_reference"],
-        "status": saved_record["status"],
-        "total_medications": saved_record["total_medications"],
-        "processing_time_ms": saved_record["processing_time_ms"],
-        "result": saved_record["result"],
-    }
-
-
-@app.get(
-    "/prescription/history",
-    status_code=status.HTTP_200_OK,
-    summary="List Prescription History",
-    description="Retrieve paginated prescription history. Users view their own; admins view all.",
-    tags=["Prescription Reader", "History"],
-)
-@app.get(
-    "/api/v1/prescription/history",
-    status_code=status.HTTP_200_OK,
-    include_in_schema=False,
-)
-def get_user_prescription_history_endpoint(
-    limit: int = Query(50, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    current_user: Dict[str, Any] = Depends(require_authenticated_user),
-):
-    """Retrieve user-isolated or admin-wide prescription analysis history."""
-    owner_filter = None if current_user.get("role") == "ADMIN" else current_user["id"]
-    items, total = get_prescription_history(limit=limit, offset=offset, owner_user_id=owner_filter)
-    return {
-        "items": items,
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-    }
-
-
-@app.get(
-    "/prescription/history/{analysis_id}",
-    status_code=status.HTTP_200_OK,
-    summary="Get Prescription Analysis Detail",
-    tags=["Prescription Reader", "History"],
-)
-@app.get(
-    "/api/v1/prescription/history/{analysis_id}",
-    status_code=status.HTTP_200_OK,
-    include_in_schema=False,
-)
-def get_prescription_detail_endpoint(
-    analysis_id: str,
-    current_user: Dict[str, Any] = Depends(require_authenticated_user),
-):
-    """Retrieve detailed prescription understanding result with ownership check."""
-    validate_analysis_id_format(analysis_id)
-    record = get_prescription_analysis_by_id(analysis_id)
-    if not record:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Prescription analysis with ID '{analysis_id}' not found.",
-        )
-    if current_user.get("role") != "ADMIN":
-        record_owner = record.get("owner_user_id")
-        if record_owner and record_owner != current_user["id"]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied. You do not have permission to view this prescription analysis.",
-            )
-    return record
-
-
-@app.get(
-    "/prescription/history/{analysis_id}/artifacts/{artifact_type}",
-    summary="Get Prescription Image Artifact",
-    tags=["Prescription Reader", "History"],
-    response_class=FileResponse,
-)
-@app.get(
-    "/api/v1/prescription/history/{analysis_id}/artifacts/{artifact_type}",
-    response_class=FileResponse,
-    include_in_schema=False,
-)
-def get_prescription_artifact_endpoint(
-    analysis_id: str,
-    artifact_type: str,
-    current_user: Dict[str, Any] = Depends(require_authenticated_user),
-) -> FileResponse:
-    """Stream saved prescription image artifact."""
-    validate_analysis_id_format(analysis_id)
-    record = get_prescription_analysis_by_id(analysis_id)
-    if not record:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Prescription analysis with ID '{analysis_id}' not found.",
-        )
-    if current_user.get("role") != "ADMIN":
-        record_owner = record.get("owner_user_id")
-        if record_owner and record_owner != current_user["id"]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied. You do not have permission to view this artifact.",
-            )
-    image_ref = record.get("image_reference")
-    if not image_ref:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Image artifact not found for prescription analysis '{analysis_id}'.",
-        )
-    resolved_path = resolve_safe_image_path(image_ref)
-    if not resolved_path or not resolved_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Prescription artifact file not found on server.",
-        )
-    media_type = "image/jpeg" if resolved_path.suffix.lower() in [".jpg", ".jpeg"] else "image/png"
-    return FileResponse(path=str(resolved_path), media_type=media_type)
-
-
-@app.get(
-    "/admin/prescriptions",
-    status_code=status.HTTP_200_OK,
-    summary="Admin Platform-Wide Prescription Analyses",
-    tags=["Administration"],
-)
-@app.get(
-    "/api/v1/admin/prescriptions",
-    status_code=status.HTTP_200_OK,
-    include_in_schema=False,
-)
-def get_admin_prescriptions_endpoint(
-    limit: int = Query(50, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    admin_user: Dict[str, Any] = Depends(require_admin),
-):
-    """List all prescription records across the entire platform for admin audit."""
-    items, total = get_prescription_history(limit=limit, offset=offset, owner_user_id=None)
-    return {
-        "items": items,
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-    }
 
 
 if __name__ == "__main__":
