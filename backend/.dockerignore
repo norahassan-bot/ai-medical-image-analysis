@@ -1,0 +1,39 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+
+# Jupyter Notebooks & checkpoints
+.ipynb_checkpoints/
+notebooks/
+
+# Local Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary and local data/reports files (volumes are used at runtime)
+data/chest_xray/
+data/*.db
+data/visualizations/*
+reports/pdf/*
+*.log

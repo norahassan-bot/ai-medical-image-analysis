@@ -1,0 +1,14 @@
+{
+  "name": "ai-medical-image-analysis-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Root workspace runner for AI Medical Image Analysis platform",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix frontend start",
+    "lint": "npm --prefix frontend run lint",
+    "test": "npm --prefix frontend test",
+    "install:frontend": "npm --prefix frontend install"
+  }
+}

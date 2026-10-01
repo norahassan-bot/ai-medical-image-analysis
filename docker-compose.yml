@@ -1,0 +1,74 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: medical-ai-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - HOST=0.0.0.0
+      - PORT=8000
+      - CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000"]
+      - DATABASE_PATH=/app/data/medical_ai.db
+      - STORAGE_DIR=/app/data/visualizations
+      - PDF_REPORTS_DIR=/app/reports/pdf
+      - MODEL_CHECKPOINT_PATH=/app/models/best_model.pth
+      - MODEL_VERSION=1.0.0
+    volumes:
+      # Persistent volume for SQLite database and visualization artifacts
+      - medical_sqlite_data:/app/data
+      # Persistent volume for generated clinical PDF reports
+      - medical_reports_data:/app/reports
+      # Read-only mount for trained PyTorch model checkpoints
+      - ./backend/models:/app/models:ro
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').getcode() == 200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - medical_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    container_name: medical-ai-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - medical_network
+
+networks:
+  medical_network:
+    name: medical_network
+    driver: bridge
+
+volumes:
+  medical_sqlite_data:
+    name: medical_sqlite_data
+  medical_reports_data:
+    name: medical_reports_data
